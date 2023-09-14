@@ -1,1 +1,4 @@
-export class CreateHotelQuotationDto {}
+export class CreateHotelQuotationDto {
+  checkin: string;
+  checkout: string;
+}
