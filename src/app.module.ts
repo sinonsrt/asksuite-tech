@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { HotelQuotationModule } from './modules/hotel-quotation/hotel-quotation.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [HotelQuotationModule],
+  imports: [ConfigModule.forRoot(), HotelQuotationModule],
   controllers: [],
   providers: [],
 })
