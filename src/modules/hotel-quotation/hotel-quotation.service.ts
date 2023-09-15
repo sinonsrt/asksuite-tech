@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import puppeteer from 'puppeteer';
+import puppeteer, { ElementHandle } from 'puppeteer';
 import { CreateHotelQuotationDto } from './dto/create-hotel-quotation.dto';
 import { HotelQuotation } from './interfaces/hotel-quotation';
 import { RoomFieldsEnum } from './enums/hotel-fields-enum';
@@ -27,25 +27,29 @@ export class HotelQuotationService {
     const hotelQuotations: HotelQuotation[] = [];
 
     for await (const hotelElement of hotelElements) {
-      const quotation: HotelQuotation = {
-        name: await hotelElement.$eval(
-          RoomFieldsEnum.name,
-          (element) => element.textContent,
-        ),
-        description: await hotelElement.$eval(
-          RoomFieldsEnum.description,
-          (element) => element.textContent,
-        ),
-        price: await hotelElement.$eval(
-          RoomFieldsEnum.price,
-          (element) => element.textContent,
-        ),
-        image: await hotelElement.$eval(RoomFieldsEnum.image, (element) =>
-          element.getAttribute('data-src'),
-        ),
-      };
+      const roomAvailable = await this.roomAvailableValidation(hotelElement);
 
-      hotelQuotations.push(quotation);
+      if (roomAvailable) {
+        const quotation: HotelQuotation = {
+          name: await hotelElement.$eval(
+            RoomFieldsEnum.name,
+            (element) => element.textContent,
+          ),
+          description: await hotelElement.$eval(
+            RoomFieldsEnum.description,
+            (element) => element.textContent,
+          ),
+          price: await hotelElement.$eval(
+            RoomFieldsEnum.price,
+            (element) => element.textContent,
+          ),
+          image: await hotelElement.$eval(RoomFieldsEnum.image, (element) =>
+            element.getAttribute('data-src'),
+          ),
+        };
+
+        hotelQuotations.push(quotation);
+      }
     }
 
     if (!hotelElements.length) {
@@ -57,5 +61,24 @@ export class HotelQuotationService {
     await browser.close();
 
     return hotelQuotations;
+  }
+
+  private async roomAvailableValidation(
+    hotelElement: ElementHandle<Element>,
+  ): Promise<boolean> {
+    const validationFields = [
+      RoomFieldsEnum.name,
+      RoomFieldsEnum.description,
+      RoomFieldsEnum.price,
+      RoomFieldsEnum.image,
+    ];
+
+    for await (const field of validationFields) {
+      const element = await hotelElement.$(field);
+
+      if (!element) return false;
+    }
+
+    return true;
   }
 }
