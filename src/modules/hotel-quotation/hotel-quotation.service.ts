@@ -1,9 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import puppeteer, { ElementHandle } from 'puppeteer';
+import puppeteer, { Browser, ElementHandle, Page } from 'puppeteer';
 import { CreateHotelQuotationDto } from './dto/create-hotel-quotation.dto';
-import { HotelQuotation } from './interfaces/hotel-quotation';
+import { IHotelQuotation } from './interfaces/hotel-quotation';
 import { RoomFieldsEnum } from './enums/hotel-fields-enum';
+
+interface IGetBrowserPage {
+  page: Page;
+  browser: Browser;
+}
 
 @Injectable()
 export class HotelQuotationService {
@@ -12,25 +17,71 @@ export class HotelQuotationService {
   async getHotelQuotation({
     checkin,
     checkout,
-  }: CreateHotelQuotationDto): Promise<HotelQuotation[]> {
+  }: CreateHotelQuotationDto): Promise<IHotelQuotation[]> {
+    const checkintr = checkin.split('-').reverse().join('-');
+    const checkouttr = checkout.split('-').reverse().join('-');
+
+    const { browser, page } = await this.getBrowserPage();
+
+    const hotelURL = this.configService
+      .get('HOTEL_URL')
+      .replace('$CHECKIN_DATE', checkintr)
+      .replace('$CHECKOUT_DATE', checkouttr);
+
+    await page.goto(hotelURL);
+
+    const hotelQuotationList = await this.getHotelQuotationList(hotelURL, page);
+
+    if (!hotelQuotationList.length) {
+      await browser.close();
+
+      throw new NotFoundException(
+        `No rooms available during the period ${checkin} - ${checkout}`,
+      );
+    }
+
+    await browser.close();
+
+    return hotelQuotationList;
+  }
+
+  private async getBrowserPage(): Promise<IGetBrowserPage> {
     const browser = await puppeteer.launch({
       headless: 'new',
     });
     const page = await browser.newPage();
 
-    await page.goto(this.configService.get('HOTEL_BASE_URL'), {
-      waitUntil: 'load',
-    });
+    return { browser, page };
+  }
 
+  private async roomAvailableValidation(
+    hotelElement: ElementHandle<Element>,
+  ): Promise<boolean> {
+    const validationFields = [
+      RoomFieldsEnum.name,
+      RoomFieldsEnum.description,
+      RoomFieldsEnum.price,
+      RoomFieldsEnum.image,
+    ];
+
+    for await (const field of validationFields) {
+      const element = await hotelElement.$(field);
+
+      if (!element) return false;
+    }
+
+    return true;
+  }
+
+  private async getHotelQuotationList(url: string, page: Page) {
     const hotelElements = await page.$$('#tblAcomodacoes .row-quarto');
-
-    const hotelQuotations: HotelQuotation[] = [];
+    const hotelQuotations: IHotelQuotation[] = [];
 
     for await (const hotelElement of hotelElements) {
       const roomAvailable = await this.roomAvailableValidation(hotelElement);
 
       if (roomAvailable) {
-        const quotation: HotelQuotation = {
+        const quotation: IHotelQuotation = {
           name: await hotelElement.$eval(
             RoomFieldsEnum.name,
             (element) => element.textContent,
@@ -52,33 +103,6 @@ export class HotelQuotationService {
       }
     }
 
-    if (!hotelElements.length) {
-      throw new NotFoundException(
-        `No rooms available during the period ${checkin} - ${checkout}`,
-      );
-    }
-
-    await browser.close();
-
     return hotelQuotations;
-  }
-
-  private async roomAvailableValidation(
-    hotelElement: ElementHandle<Element>,
-  ): Promise<boolean> {
-    const validationFields = [
-      RoomFieldsEnum.name,
-      RoomFieldsEnum.description,
-      RoomFieldsEnum.price,
-      RoomFieldsEnum.image,
-    ];
-
-    for await (const field of validationFields) {
-      const element = await hotelElement.$(field);
-
-      if (!element) return false;
-    }
-
-    return true;
   }
 }
