@@ -1,36 +1,38 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import puppeteer, { Browser, ElementHandle, Page } from 'puppeteer';
+import { ElementHandle, Page } from 'puppeteer';
 import { CreateHotelQuotationDto } from './dto/create-hotel-quotation.dto';
 import { IHotelQuotation } from './interfaces/hotel-quotation';
 import { RoomFieldsEnum } from './enums/hotel-fields-enum';
-
-interface IGetBrowserPage {
-  page: Page;
-  browser: Browser;
-}
+import { BrowserProvider, DateProvider } from '../../utils/providers';
 
 @Injectable()
 export class HotelQuotationService {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private browserProvider: BrowserProvider,
+    private dateProvider: DateProvider,
+  ) {}
 
   async getHotelQuotation({
     checkin,
     checkout,
   }: CreateHotelQuotationDto): Promise<IHotelQuotation[]> {
-    const checkintr = checkin.split('-').reverse().join('-');
-    const checkouttr = checkout.split('-').reverse().join('-');
+    this.dateProvider.validateIsEqualOrThrow(checkin, checkout);
 
-    const { browser, page } = await this.getBrowserPage();
+    const formattedCheckinDate = this.dateProvider.dateFormat(checkin);
+    const formattedCheckoutDate = this.dateProvider.dateFormat(checkout);
+
+    const { browser, page } = await this.browserProvider.getBrowserPage();
 
     const hotelURL = this.configService
       .get('HOTEL_URL')
-      .replace('$CHECKIN_DATE', checkintr)
-      .replace('$CHECKOUT_DATE', checkouttr);
+      .replace('$CHECKIN_DATE', formattedCheckinDate)
+      .replace('$CHECKOUT_DATE', formattedCheckoutDate);
 
     await page.goto(hotelURL);
 
-    const hotelQuotationList = await this.getHotelQuotationList(hotelURL, page);
+    const hotelQuotationList = await this.getHotelQuotationList(page);
 
     if (!hotelQuotationList.length) {
       await browser.close();
@@ -43,15 +45,6 @@ export class HotelQuotationService {
     await browser.close();
 
     return hotelQuotationList;
-  }
-
-  private async getBrowserPage(): Promise<IGetBrowserPage> {
-    const browser = await puppeteer.launch({
-      headless: 'new',
-    });
-    const page = await browser.newPage();
-
-    return { browser, page };
   }
 
   private async roomAvailableValidation(
@@ -73,7 +66,7 @@ export class HotelQuotationService {
     return true;
   }
 
-  private async getHotelQuotationList(url: string, page: Page) {
+  private async getHotelQuotationList(page: Page): Promise<IHotelQuotation[]> {
     const hotelElements = await page.$$('#tblAcomodacoes .row-quarto');
     const hotelQuotations: IHotelQuotation[] = [];
 
@@ -81,22 +74,29 @@ export class HotelQuotationService {
       const roomAvailable = await this.roomAvailableValidation(hotelElement);
 
       if (roomAvailable) {
-        const quotation: IHotelQuotation = {
-          name: await hotelElement.$eval(
+        const [name, description, price, image] = await Promise.all([
+          hotelElement.$eval(
             RoomFieldsEnum.name,
             (element) => element.textContent,
           ),
-          description: await hotelElement.$eval(
+          hotelElement.$eval(
             RoomFieldsEnum.description,
             (element) => element.textContent,
           ),
-          price: await hotelElement.$eval(
+          hotelElement.$eval(
             RoomFieldsEnum.price,
             (element) => element.textContent,
           ),
-          image: await hotelElement.$eval(RoomFieldsEnum.image, (element) =>
+          hotelElement.$eval(RoomFieldsEnum.image, (element) =>
             element.getAttribute('data-src'),
           ),
+        ]);
+
+        const quotation: IHotelQuotation = {
+          name,
+          description,
+          price,
+          image,
         };
 
         hotelQuotations.push(quotation);
