@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ElementHandle, Page } from 'puppeteer';
 import { CreateHotelQuotationDto } from './dto/create-hotel-quotation.dto';
@@ -8,6 +8,8 @@ import { BrowserProvider, DateProvider } from '../../utils/providers';
 
 @Injectable()
 export class HotelQuotationService {
+  private readonly logger = new Logger(HotelQuotationService.name);
+
   constructor(
     private configService: ConfigService,
     private browserProvider: BrowserProvider,
@@ -18,6 +20,8 @@ export class HotelQuotationService {
     checkin,
     checkout,
   }: CreateHotelQuotationDto): Promise<IHotelQuotation[]> {
+    this.logger.log('START getHotelQuotation SERVICE');
+
     this.dateProvider.validateIsDiffOrThrow(checkin, checkout);
 
     const formattedCheckinDate = this.dateProvider.dateFormat(checkin);
@@ -27,8 +31,10 @@ export class HotelQuotationService {
 
     const hotelURL = this.configService
       .get('HOTEL_URL')
-      .replace('$CHECKIN_DATE', formattedCheckinDate)
-      .replace('$CHECKOUT_DATE', formattedCheckoutDate);
+      .replace('{CHECKIN_DATE}', formattedCheckinDate)
+      .replace('{CHECKOUT_DATE}', formattedCheckoutDate);
+
+    this.logger.log(`GETTING OPTION FROM ${hotelURL}`);
 
     await page.goto(hotelURL);
 
@@ -37,12 +43,17 @@ export class HotelQuotationService {
     if (!hotelQuotationList.length) {
       await browser.close();
 
+      this.logger.error(`NO ROOMS AVAILABLE`);
+
       throw new NotFoundException(
         `No rooms available during the period ${checkin} - ${checkout}`,
       );
     }
 
     await browser.close();
+
+    this.logger.log(`GET ${hotelQuotationList.length} OPTIONS`);
+    this.logger.log('END getHotelQuotation SERVICE');
 
     return hotelQuotationList;
   }

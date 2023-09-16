@@ -10,5 +10,6 @@ services:
     volumes:
       - .:/usr/app
     environment:
+      CHROME_BIN: /usr/bin/chromium-browser
       PORT: 8080
-      HOTEL_URL: https://pratagy.letsbook.com.br/D/Reserva?checkin=$CHECKIN_DATE&checkout=$CHECKOUT_DATE&cidade=&hotel=12&adultos=2&criancas=&destino=Pratagy+Beach+Resort+All+Inclusive&promocode=&tarifa=&mesCalendario=6%2F14%2F2022
+      HOTEL_URL: https://pratagy.letsbook.com.br/D/Reserva?checkin={CHECKIN_DATE}&checkout={CHECKOUT_DATE}&cidade=&hotel=12&adultos=2&criancas=&destino=Pratagy+Beach+Resort+All+Inclusive&promocode=&tarifa=&mesCalendario=9%2F1%2F2023&_ga=&_gl=&_gcl=
