@@ -8,7 +8,7 @@ export class DateProvider {
     return fomattedDate;
   }
 
-  validateIsEqualOrThrow(checkin: string, checkout: string): void {
+  validateIsDiffOrThrow(checkin: string, checkout: string): void {
     if (checkin >= checkout) {
       throw new BadRequestException(
         `The checkout date ${checkout} is later than or equal to the check-in date ${checkin}.`,

@@ -1,0 +1,14 @@
+version: '3.9'
+
+services:
+  api:
+    container_name: scrapping-app
+    build: .
+    command: 'npm run start'
+    ports:
+      - 8080:8080
+    volumes:
+      - .:/usr/app
+    environment:
+      PORT: 8080
+      HOTEL_URL: https://pratagy.letsbook.com.br/D/Reserva?checkin=$CHECKIN_DATE&checkout=$CHECKOUT_DATE&cidade=&hotel=12&adultos=2&criancas=&destino=Pratagy+Beach+Resort+All+Inclusive&promocode=&tarifa=&mesCalendario=6%2F14%2F2022

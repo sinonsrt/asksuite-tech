@@ -18,7 +18,7 @@ export class HotelQuotationService {
     checkin,
     checkout,
   }: CreateHotelQuotationDto): Promise<IHotelQuotation[]> {
-    this.dateProvider.validateIsEqualOrThrow(checkin, checkout);
+    this.dateProvider.validateIsDiffOrThrow(checkin, checkout);
 
     const formattedCheckinDate = this.dateProvider.dateFormat(checkin);
     const formattedCheckoutDate = this.dateProvider.dateFormat(checkout);

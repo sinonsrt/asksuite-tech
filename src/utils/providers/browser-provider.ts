@@ -11,6 +11,7 @@ export class BrowserProvider {
   async getBrowserPage(): Promise<IGetBrowserPage> {
     const browser = await puppeteer.launch({
       headless: 'new',
+      args: ['--no-sandbox'],
     });
     const page = await browser.newPage();
 
