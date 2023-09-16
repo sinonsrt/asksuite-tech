@@ -105,3 +105,100 @@ What do we evaluate with this test?
   - Clear and maintainable code
   - Coding structure
   - Changes that don't break easily
+
+## Descrição
+
+Aksuite Node.js - Scrapping
+
+## Desenvolvimento
+
+Desenvolvimento conta com API Rest, testes Unitários, testes E2E, validação de JSON e docker. Desenvolvido utilizando Node.js, Typescript, Nest.js, Jest, Supertest, Zod, Swagger, Docker.
+
+## Pré-requisitos
+
+```bash
+- Node.js
+- npm ou yarn
+- Docker
+```
+
+## Instalação dos pacotes
+
+```bash
+# npm
+$ npm install
+  ou
+# yarn
+$ yarn install
+```
+
+### Instruções para iniciar a aplicação
+
+A API pode ser iniciada de duas maneiras, podendo ser acessada em um container via Docker(1°) ou localmente(2°).
+
+## 1° - Execução com Docker
+
+Na raiz do projeto execute o comando para a criação do container Docker com a API e banco de dados
+
+```bash
+# comando para criação do container em background
+$ docker-compose up -d
+  ou
+# comando para criação do container(desta forma o terminar é utilizado e travado pelo Docker)
+$ docker-compose up
+```
+
+O container será criado e basta aguardar a subida da API e ela estará acessível em:
+
+```bash
+$ http://localhost:3001
+
+```
+
+## 2° - Execução Local
+
+Na raiz do projeto execute o comando abaixo para iniciar a aplicação:
+
+```bash
+# npm
+$ npm run start
+  ou
+# yarn
+$ yarn start
+```
+
+A API será iniciada e estara disponível em:
+
+```bash
+$ http://localhost:8080
+
+```
+
+## Collections para acessar a API - Insomnia/Postman
+
+Na raiz do projeto na pasta API-collections está disponível 2 documentos com o seguinte nome:
+
+```bash
+# Collection da API para Insomnia
+$ COLLECTION-Insomnia-AKSUITE
+  e
+# Collection da API para Postman
+$ COLLECTION-Postman-AKSUITE
+```
+
+## Testes
+
+Para realizar a execução dos testes, na raiz do projeto execute os comandos a seguir:
+
+```bash
+# testes unitários
+$ npm run test
+  ou
+$ yarn test
+
+# testes e2e
+$ npm run test:e2e
+  ou
+$ yarn test:e2e
+
+```
