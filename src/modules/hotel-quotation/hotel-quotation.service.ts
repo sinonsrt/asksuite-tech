@@ -34,7 +34,7 @@ export class HotelQuotationService {
       .replace('{CHECKIN_DATE}', formattedCheckinDate)
       .replace('{CHECKOUT_DATE}', formattedCheckoutDate);
 
-    this.logger.log(`GETTING OPTION FROM ${hotelURL}`);
+    this.logger.log(`GETTING OPTIONS FROM ${hotelURL}`);
 
     await page.goto(hotelURL);
 
@@ -43,7 +43,7 @@ export class HotelQuotationService {
     if (!hotelQuotationList.length) {
       await browser.close();
 
-      this.logger.error(`NO ROOMS AVAILABLE`);
+      this.logger.log(`NO ROOMS AVAILABLE`);
 
       throw new NotFoundException(
         `No rooms available during the period ${checkin} - ${checkout}`,
