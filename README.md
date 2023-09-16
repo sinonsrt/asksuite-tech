@@ -151,7 +151,7 @@ $ docker-compose up
 O container será criado e basta aguardar a subida da API e ela estará acessível em:
 
 ```bash
-$ http://localhost:3001
+$ http://localhost:8080
 
 ```
 
