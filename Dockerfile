@@ -16,8 +16,12 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ./package.json .
+COPY package*.json .
+
+RUN curl -v https://registry.npmjs.com/
 
 RUN npm install --omit=dev
+
+RUN npm ci
 
 COPY . .
